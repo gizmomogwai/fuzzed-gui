@@ -1,0 +1,22 @@
+name "fuzzed-gui"
+description "Graphical fuzzy finder using fuzzed's search library and the local dimgui fork"
+authors "Christian Koestlin"
+copyright "Copyright (c) 2026, Christian Koestlin"
+license "MIT"
+toolchainRequirements ldc=">=1.42.0" dmd="no" gdc="no"
+targetType "executable"
+targetPath "out"
+targetName "fuzzed-gui"
+dependency "fuzzed" path="../14-fuzzed"
+subConfiguration "fuzzed" "library"
+dependency "dimgui:opengl33" path="../dimgui"
+versions "GL_33" "GLFW_33"
+sourcePaths "source"
+mainSourceFile "source/app.d"
+copyFiles "../dimgui/DroidSans.ttf"
+
+configuration "application" {
+}
+configuration "tests" {
+    dependency "unit-threaded" version="~>2.2.6"
+}

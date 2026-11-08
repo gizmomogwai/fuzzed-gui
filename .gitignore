@@ -1,0 +1,7 @@
+.dub/
+out/
+*.o
+*.obj
+*.lst
+*.log
+.direnv

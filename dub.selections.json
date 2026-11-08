@@ -1,0 +1,14 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"bindbc-glfw": "1.0.3",
+		"bindbc-loader": "1.0.3",
+		"bindbc-opengl": "1.0.5",
+		"colored": "0.0.34",
+		"deetween": "0.0.6",
+		"dimgui": {"path":"../dimgui"},
+		"fuzzed": {"path":"../14-fuzzed"},
+		"tui": "0.0.7",
+		"unit-threaded": "2.1.9"
+	}
+}
