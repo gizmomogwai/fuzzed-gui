@@ -1,0 +1,12 @@
+* fuzzed-gui
+Graphical fuzzy finder: pipe lines in, pick one, and it is printed to stdout.
+
+** Run
+#+begin_src sh
+  ls | nix run github:gizmomogwai/fuzzed-gui
+#+end_src
+
+On non-NixOS systems OpenGL needs [[https://github.com/nix-community/nixGL][nixGL]]:
+#+begin_src sh
+  ls | nixGL nix run github:gizmomogwai/fuzzed-gui
+#+end_src

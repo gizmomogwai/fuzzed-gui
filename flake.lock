@@ -3,11 +3,11 @@
     "dimgui": {
       "flake": false,
       "locked": {
-        "lastModified": 1794230890,
+        "lastModified": 1794231292,
         "narHash": "sha256-G2MeYYDZneu8EiFpf+xa7V69/aT8fQ2I9Ix//+CLvOc=",
         "owner": "gizmomogwai",
         "repo": "dimgui",
-        "rev": "9cbf60c2b7d2661054e4f19d007f134946958cef",
+        "rev": "030141d24f8c4fe43cfe7da1c0a5c4924d776f5d",
         "type": "github"
       },
       "original": {
