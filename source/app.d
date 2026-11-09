@@ -1,26 +1,24 @@
+import imgui.colorscheme : defaultColorScheme, zenburnColorScheme;
 import picker;
 import picker_window;
 import std.array : array;
 import std.exception : enforce;
-import std.stdio : stdin, stdout, stderr;
+import std.stdio : stderr, stdin, stdout;
 
 int main(string[] arguments)
 {
+    defaultColorScheme = zenburnColorScheme;
     try
     {
-        enforce(arguments.length == 1 ||
-            (arguments.length == 2 && arguments[1] == "--native-check"),
-            "Usage: fuzzed-gui [--native-check]");
-        if (arguments.length == 2)
-        {
-            verifyNativePicker();
-            return 0;
-        }
+        enforce(arguments.length == 1, "Usage: fuzzed-gui");
         auto picker = new Picker(stdin.byLineCopy.array);
         if (!picker.closed)
         {
             auto window = new PickerWindow(picker);
-            scope(exit) window.dispose();
+            scope (exit)
+            {
+                window.dispose();
+            }
             window.run();
         }
         if (!picker.chosen)

@@ -3,7 +3,15 @@ module picker;
 import fuzzed.model : Model;
 import std.algorithm : min, max;
 
-enum Navigation { up, down, pageUp, pageDown, first, last }
+enum Navigation
+{
+    up,
+    down,
+    pageUp,
+    pageDown,
+    first,
+    last
+}
 
 /// UI-independent state shared by keyboard, mouse and filtering.
 final class Picker
@@ -23,14 +31,40 @@ final class Picker
         closed = lines.length == 0;
     }
 
-    string query() const { return model.pattern; }
-    int selected() const { return highlighted; }
-    int scrollOffset() const { return firstVisible; }
-    int visibleRows() const { return pageSize; }
-    int count() const { return cast(int) model.matches.length; }
-    string row(int index) const { return model.matches[index].value; }
+    string query() const
+    {
+        return model.pattern;
+    }
+
+    int selected() const
+    {
+        return highlighted;
+    }
+
+    int scrollOffset() const
+    {
+        return firstVisible;
+    }
+
+    int visibleRows() const
+    {
+        return pageSize;
+    }
+
+    int count() const
+    {
+        return cast(int) model.matches.length;
+    }
+
+    string row(int index) const
+    {
+        return model.matches[index].value;
+    }
     /// Matched grapheme positions supplied by fuzzed's search core.
-    const(ulong)[] matchedPositions(int index) const { return model.matches[index].positions; }
+    const(ulong)[] matchedPositions(int index) const
+    {
+        return model.matches[index].positions;
+    }
 
     void filter(string query)
     {
@@ -53,18 +87,26 @@ final class Picker
         }
         final switch (direction)
         {
-            case Navigation.down: highlighted = min(count - 1, highlighted + 1); break;
-            case Navigation.up: highlighted = max(0, highlighted - 1); break;
-            case Navigation.pageDown:
-                highlighted = min(count - 1, max(0, highlighted) + pageSize);
-                firstVisible = min(max(0, count - pageSize), firstVisible + pageSize);
-                break;
-            case Navigation.pageUp:
-                highlighted = max(0, highlighted - pageSize);
-                firstVisible = max(0, firstVisible - pageSize);
-                break;
-            case Navigation.first: highlighted = 0; break;
-            case Navigation.last: highlighted = count - 1; break;
+        case Navigation.down:
+            highlighted = min(count - 1, highlighted + 1);
+            break;
+        case Navigation.up:
+            highlighted = max(0, highlighted - 1);
+            break;
+        case Navigation.pageDown:
+            highlighted = min(count - 1, max(0, highlighted) + pageSize);
+            firstVisible = min(max(0, count - pageSize), firstVisible + pageSize);
+            break;
+        case Navigation.pageUp:
+            highlighted = max(0, highlighted - pageSize);
+            firstVisible = max(0, firstVisible - pageSize);
+            break;
+        case Navigation.first:
+            highlighted = 0;
+            break;
+        case Navigation.last:
+            highlighted = count - 1;
+            break;
         }
         firstVisible = min(firstVisible, highlighted);
         if (highlighted >= firstVisible + pageSize)
@@ -76,7 +118,7 @@ final class Picker
     void scroll(int rows)
     {
         firstVisible = cast(int) min(max(0L, cast(long) firstVisible + rows),
-            max(0, count - pageSize));
+                max(0, count - pageSize));
     }
 
     void choose(int index)
@@ -90,7 +132,10 @@ final class Picker
         closed = true;
     }
 
-    void accept() { choose(max(0, highlighted)); }
+    void accept()
+    {
+        choose(max(0, highlighted));
+    }
 
     void escape()
     {
@@ -159,6 +204,7 @@ unittest
 unittest
 {
     import std.conv : to;
+
     string[] lines;
     foreach (number; 0 .. 10000)
     {
