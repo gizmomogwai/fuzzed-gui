@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "bindbc-glfw": {
+      "version": "1.0.3",
+      "sha256": "0aic5lhc499mbz1xih1g94qkiy9fg1v8j30chfmd9lrmb17mxakh"
+    },
+    "bindbc-loader": {
+      "version": "1.0.3",
+      "sha256": "0d688cwb2hjhfxc7l00cfh22prybsndk6j1hvlrf9nlzb46i4i1j"
+    },
+    "bindbc-opengl": {
+      "version": "1.0.5",
+      "sha256": "0p26v8xk42zd07mvzjl775ypnq1f31r3c1spfp1lipyc4s4028l2"
+    },
+    "colored": {
+      "version": "0.0.34",
+      "sha256": "16frki7dcs1dhxv2dwkc36nbpb5xhqwzkjycjjhflfv7xsbg3dg3"
+    },
+    "deetween": {
+      "version": "0.0.6",
+      "sha256": "0ggq15d7b123wa1hrqfazqbpaxg4g1pnh9mch7iy62m941v2pv5p"
+    },
+    "tui": {
+      "version": "0.0.7",
+      "sha256": "0azw0aqypsvjibd81yrixfp74i4p7b12f7gmlfmny14c8xxhp1c5"
+    },
+    "unit-threaded": {
+      "version": "2.1.9",
+      "sha256": "0x3d8jv65v4sh4nk4fkah202vbqnkhbzdc7k40yjqbjlgx76h1hy"
+    }
+  }
+}

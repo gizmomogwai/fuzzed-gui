@@ -1,5 +1,37 @@
 {
   "nodes": {
+    "dimgui": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794229744,
+        "narHash": "sha256-bQmrdttxQ6QeL0vZkqesavQZL6i7R+1nd6o+3Wwlt5A=",
+        "owner": "gizmomogwai",
+        "repo": "dimgui",
+        "rev": "1edc617c5c77af0f3abb28c72031bd6bbd7ae887",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gizmomogwai",
+        "repo": "dimgui",
+        "type": "github"
+      }
+    },
+    "fuzzed": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794168357,
+        "narHash": "sha256-5gvNe7Nut3ncwBef846WDh9ZbG0c/SOTvTDfqxZYydY=",
+        "owner": "gizmomogwai",
+        "repo": "fuzzed",
+        "rev": "8df944e70a33e4f24edcf756ddebc697dfaae150",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gizmomogwai",
+        "repo": "fuzzed",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1793726008,
@@ -18,6 +50,8 @@
     },
     "root": {
       "inputs": {
+        "dimgui": "dimgui",
+        "fuzzed": "fuzzed",
         "nixpkgs": "nixpkgs"
       }
     }
