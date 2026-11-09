@@ -3,7 +3,7 @@ module picker_window;
 import picker;
 import imgui : ImGui, MouseInfo, Editor, Sizes, LineLayout, TextAlign, TextSpan, Enabled;
 import imgui.api : addGlobalAlpha, toPackedRGBA;
-import imgui.colorscheme : RGBA, defaultColorScheme;
+import imgui.colorscheme : RGBA, defaultColorScheme, zenburnColorScheme;
 import imgui.renderer.opengl33 : Opengl33;
 import bindbc.glfw;
 import bindbc.opengl;
@@ -16,7 +16,7 @@ import std.string : fromStringz;
 import std.uni : byCodePoint, byGrapheme;
 import std.utf : codeLength;
 
-private enum matchColor = RGBA(255, 200, 90);
+private enum matchColor = RGBA(0xDF, 0xAF, 0x8F); // Zenburn orange, like Emacs helm-match
 
 private TextSpan[] highlightedText(string text, const(ulong)[] matchedPositions)
 {
@@ -80,6 +80,7 @@ final class PickerWindow
     this(Picker picker)
     {
         this.picker = picker;
+        defaultColorScheme = zenburnColorScheme;
         scope(failure) dispose();
         enforce(loadGLFW() == glfwSupport, "Could not load the GLFW library");
         enforce(glfwInit() != 0, "Could not initialize GLFW");
@@ -183,7 +184,7 @@ final class PickerWindow
     private void render(MouseInfo currentMouse, ubyte[] diagnosticPixels = null)
     {
         picker.resize(max(1, (height - headerHeight) / rowHeight));
-        glClearColor(0.12, 0.13, 0.15, 1);
+        glClearColor(0x3F / 255.0, 0x3F / 255.0, 0x3F / 255.0, 1); // Zenburn bg
         glClear(GL_COLOR_BUFFER_BIT);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -196,14 +197,14 @@ final class PickerWindow
             gui.state.widgetX = Sizes.DEFAULT_SPACING;
             gui.state.widgetY = height - Sizes.DEFAULT_SPACING;
             gui.state.widgetW = width - 2 * Sizes.DEFAULT_SPACING;
-            auto textX = gui.state.widgetX + Sizes.DEFAULT_SPACING * 2;
+            auto textX = gui.state.widgetX + Sizes.LINE_HEIGHT / 2;
             auto textBaseline = gui.state.widgetY - Sizes.LINE_HEIGHT / 2 -
                 Sizes.TEXT_HEIGHT / 2 + Sizes.TEXT_BASELINE;
             gui.textInput("", editor, true);
             if (editor.buffer.length == 0)
             {
                 gui.drawText(textX, textBaseline,
-                    TextAlign.left, "Search", RGBA(100, 100, 100, 255));
+                    TextAlign.left, "Search", defaultColorScheme.textInput.textDisabled);
             }
             gui.pushLayout(layout);
             scope(exit) gui.popLayout();
@@ -213,7 +214,7 @@ final class PickerWindow
                 if (index == picker.selected)
                 {
                     gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.LINE_HEIGHT,
-                        gui.state.widgetW, Sizes.LINE_HEIGHT, RGBA(65, 100, 145, 255));
+                        gui.state.widgetW, Sizes.LINE_HEIGHT, defaultColorScheme.item.press);
                 }
                 if (gui.item(highlightedText(picker.row(index), picker.matchedPositions(index))))
                 {
@@ -227,7 +228,7 @@ final class PickerWindow
                 auto top = cast(int) (cast(long) (availableHeight - thumbHeight) *
                     picker.scrollOffset / (picker.count - picker.visibleRows));
                 gui.drawRect(width - 5, availableHeight - top - thumbHeight, 4, thumbHeight,
-                    RGBA(160, 160, 160, 255));
+                    defaultColorScheme.scroll.bar.thumb);
             }
         });
         gui.render();
