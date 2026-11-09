@@ -1,3 +1,4 @@
+import imgui : Sizes;
 import picker;
 import picker_window;
 import settings : loadColorScheme;
@@ -7,6 +8,9 @@ import std.stdio : stdin, stdout, stderr;
 
 int main(string[] arguments)
 {
+    // Smaller than dimgui's default; must be set before the window creates its GUI.
+    Sizes.fontSize = 26;
+    Sizes.lineHeight = 44;
     Exception settingsFailure;
     try
     {

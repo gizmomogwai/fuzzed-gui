@@ -81,8 +81,17 @@ final class PickerWindow
     private double scrollRemainder = 0;
     private LineLayout layout;
     private int width, height;
-    private enum headerHeight = Sizes.LINE_HEIGHT + Sizes.DEFAULT_SPACING * 2;
-    private enum rowHeight = Sizes.LINE_HEIGHT + Sizes.DEFAULT_SPACING;
+    // Functions, not enums: the sizes are set at runtime in main.
+    private static int headerHeight()
+    {
+        return Sizes.lineHeight + Sizes.defaultSpacing * 2;
+    }
+
+    private static int rowHeight()
+    {
+        return Sizes.lineHeight + Sizes.defaultSpacing;
+    }
+
     private enum initialWidth = 1024, initialHeight = 800;
 
     this(Picker picker)
@@ -213,20 +222,20 @@ final class PickerWindow
             addGlobalAlpha(gui.commands, 1);
             gui.state.insideCurrentScroll = currentMouse.y >= 0
                 && currentMouse.y < height - headerHeight;
-            gui.state.widgetX = Sizes.DEFAULT_SPACING;
-            gui.state.widgetY = height - Sizes.DEFAULT_SPACING;
+            gui.state.widgetX = Sizes.defaultSpacing;
+            gui.state.widgetY = height - Sizes.defaultSpacing;
             // Leave room for the gear button right of the search input.
-            gui.state.widgetW = width - 2 * Sizes.DEFAULT_SPACING - Sizes.LINE_HEIGHT;
-            auto textX = gui.state.widgetX + Sizes.LINE_HEIGHT / 2;
-            auto textBaseline = gui.state.widgetY - Sizes.LINE_HEIGHT / 2
-                - Sizes.TEXT_HEIGHT / 2 + Sizes.TEXT_BASELINE;
-            if (gearButton(width - Sizes.DEFAULT_SPACING - Sizes.LINE_HEIGHT,
-                gui.state.widgetY - Sizes.LINE_HEIGHT))
+            gui.state.widgetW = width - 2 * Sizes.defaultSpacing - Sizes.lineHeight;
+            auto textX = gui.state.widgetX + Sizes.lineHeight / 2;
+            auto textBaseline = gui.state.widgetY - Sizes.lineHeight / 2
+                - Sizes.fontSize / 2 + Sizes.textBaseline;
+            if (gearButton(width - Sizes.defaultSpacing - Sizes.lineHeight,
+                gui.state.widgetY - Sizes.lineHeight))
             {
                 choosingColorScheme = !choosingColorScheme;
             }
             gui.textInput("", editor, true);
-            gui.state.widgetW = width - 2 * Sizes.DEFAULT_SPACING;
+            gui.state.widgetW = width - 2 * Sizes.defaultSpacing;
             if (editor.buffer.length == 0)
             {
                 gui.drawText(textX, textBaseline, TextAlign.left, "Search",
@@ -249,8 +258,8 @@ final class PickerWindow
                 {
                     if (colorSchemes[name] == defaultColorScheme)
                     {
-                        gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.LINE_HEIGHT,
-                            gui.state.widgetW, Sizes.LINE_HEIGHT, defaultColorScheme.generic.rect);
+                        gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.lineHeight,
+                            gui.state.widgetW, Sizes.lineHeight, defaultColorScheme.generic.rect);
                     }
                     if (gui.item(name))
                     {
@@ -273,8 +282,8 @@ final class PickerWindow
             {
                 if (index == picker.selected)
                 {
-                    gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.LINE_HEIGHT,
-                        gui.state.widgetW, Sizes.LINE_HEIGHT, defaultColorScheme.generic.rect);
+                    gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.lineHeight,
+                        gui.state.widgetW, Sizes.lineHeight, defaultColorScheme.generic.rect);
                 }
                 if (gui.item(highlightedText(picker.row(index), picker.matchedPositions(index))))
                 {
@@ -300,24 +309,24 @@ final class PickerWindow
     private void drawError()
     {
         const top = gui.state.widgetY;
-        gui.drawRoundedRect(gui.state.widgetX, Sizes.DEFAULT_SPACING, gui.state.widgetW,
-                top - Sizes.DEFAULT_SPACING, 10, defaultColorScheme.textInput.back);
-        const textX = gui.state.widgetX + Sizes.LINE_HEIGHT / 2;
+        gui.drawRoundedRect(gui.state.widgetX, Sizes.defaultSpacing, gui.state.widgetW,
+                top - Sizes.defaultSpacing, 10, defaultColorScheme.textInput.back);
+        const textX = gui.state.widgetX + Sizes.lineHeight / 2;
         string[] lines;
         foreach (line; errorLines)
         {
-            lines ~= wrap(line, gui.state.widgetW - Sizes.LINE_HEIGHT);
+            lines ~= wrap(line, gui.state.widgetW - Sizes.lineHeight);
         }
         errorScroll = min(errorScroll, lines.length - 1);
-        auto y = top - Sizes.TEXT_HEIGHT;
+        auto y = top - Sizes.fontSize;
         foreach (line; lines[errorScroll .. $])
         {
-            if (y < Sizes.DEFAULT_SPACING)
+            if (y < Sizes.defaultSpacing)
             {
                 break;
             }
             gui.drawText(textX, y, TextAlign.left, line, defaultColorScheme.textInput.text);
-            y -= Sizes.TEXT_HEIGHT;
+            y -= Sizes.fontSize;
         }
     }
 
@@ -343,11 +352,11 @@ final class PickerWindow
     {
         gui.state.widgetId++;
         const id = (gui.state.areaId << 16) | gui.state.widgetId;
-        enum size = Sizes.LINE_HEIGHT;
+        const size = Sizes.lineHeight;
         const clicked = gui.state.buttonLogic(id, gui.state.inRect(x, y, size, size, false));
         auto color = gui.state.isIdHot(id) || choosingColorScheme
             ? defaultColorScheme.button.textHover : defaultColorScheme.button.text;
-        gui.drawText(x + size / 2, y + size / 2 - Sizes.TEXT_HEIGHT / 2 + Sizes.TEXT_BASELINE,
+        gui.drawText(x + size / 2, y + size / 2 - Sizes.fontSize / 2 + Sizes.textBaseline,
                 TextAlign.center, "\u2699", color);
         return clicked;
     }
