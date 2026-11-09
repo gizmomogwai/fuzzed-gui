@@ -2,7 +2,7 @@ module picker_window;
 
 import imgui : Editor, ImGui, LineLayout, MouseInfo, Sizes, TextAlign, TextSpan;
 import imgui.api : addGlobalAlpha;
-import imgui.colorscheme : defaultColorScheme, RGBA;
+import imgui.colorscheme : ColorScheme, defaultColorScheme, RGBA, zenburnColorScheme;
 import picker;
 import imgui.renderer.opengl33 : Opengl33;
 import bindbc.glfw;
@@ -20,6 +20,17 @@ private RGBA matchColor()
 {
     return defaultColorScheme.item.textMatch;
 }
+
+private struct NamedColorScheme
+{
+    string name;
+    ColorScheme colors;
+}
+
+private immutable colorSchemes = [
+    NamedColorScheme("default", ColorScheme.init),
+    NamedColorScheme("zenburn", zenburnColorScheme)
+];
 
 private TextSpan[] highlightedText(string text, const(ulong)[] matchedPositions)
 {
@@ -74,6 +85,7 @@ final class PickerWindow
     private Exception callbackFailure;
     private bool initialized;
     private bool replaceQuery;
+    private bool choosingColorScheme;
     private double scrollRemainder = 0;
     private LineLayout layout;
     private int width, height;
@@ -197,11 +209,18 @@ final class PickerWindow
                 && currentMouse.y < height - headerHeight;
             gui.state.widgetX = Sizes.DEFAULT_SPACING;
             gui.state.widgetY = height - Sizes.DEFAULT_SPACING;
-            gui.state.widgetW = width - 2 * Sizes.DEFAULT_SPACING;
+            // Leave room for the gear button right of the search input.
+            gui.state.widgetW = width - 2 * Sizes.DEFAULT_SPACING - Sizes.LINE_HEIGHT;
             auto textX = gui.state.widgetX + Sizes.LINE_HEIGHT / 2;
             auto textBaseline = gui.state.widgetY - Sizes.LINE_HEIGHT / 2
                 - Sizes.TEXT_HEIGHT / 2 + Sizes.TEXT_BASELINE;
+            if (gearButton(width - Sizes.DEFAULT_SPACING - Sizes.LINE_HEIGHT,
+                gui.state.widgetY - Sizes.LINE_HEIGHT))
+            {
+                choosingColorScheme = !choosingColorScheme;
+            }
             gui.textInput("", editor, true);
+            gui.state.widgetW = width - 2 * Sizes.DEFAULT_SPACING;
             if (editor.buffer.length == 0)
             {
                 gui.drawText(textX, textBaseline, TextAlign.left, "Search",
@@ -211,6 +230,23 @@ final class PickerWindow
             scope (exit)
             {
                 gui.popLayout();
+            }
+            if (choosingColorScheme)
+            {
+                foreach (scheme; colorSchemes)
+                {
+                    if (scheme.colors == defaultColorScheme)
+                    {
+                        gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.LINE_HEIGHT,
+                            gui.state.widgetW, Sizes.LINE_HEIGHT, defaultColorScheme.generic.rect);
+                    }
+                    if (gui.item(scheme.name))
+                    {
+                        defaultColorScheme = scheme.colors;
+                        choosingColorScheme = false;
+                    }
+                }
+                return;
             }
             auto last = min(picker.count, picker.scrollOffset + picker.visibleRows);
             foreach (index; picker.scrollOffset .. last)
@@ -238,6 +274,19 @@ final class PickerWindow
         gui.render();
         enforce(glGetError() == GL_NO_ERROR, "OpenGL failed to draw the dimgui picker");
         glfwSwapBuffers(handle);
+    }
+
+    private bool gearButton(int x, int y)
+    {
+        gui.state.widgetId++;
+        const id = (gui.state.areaId << 16) | gui.state.widgetId;
+        enum size = Sizes.LINE_HEIGHT;
+        const clicked = gui.state.buttonLogic(id, gui.state.inRect(x, y, size, size, false));
+        auto color = gui.state.isIdHot(id) || choosingColorScheme
+            ? defaultColorScheme.button.textHover : defaultColorScheme.button.text;
+        gui.drawText(x + size / 2, y + size / 2 - Sizes.TEXT_HEIGHT / 2 + Sizes.TEXT_BASELINE,
+                TextAlign.center, "\u2699", color);
+        return clicked;
     }
 
     unittest
@@ -331,6 +380,11 @@ final class PickerWindow
             picker.accept();
             break;
         case GLFW_KEY_ESCAPE:
+            if (choosingColorScheme)
+            {
+                choosingColorScheme = false;
+                break;
+            }
             picker.escape();
             editor = Editor.from(picker.query);
             replaceQuery = false;
