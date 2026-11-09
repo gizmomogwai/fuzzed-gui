@@ -2,17 +2,18 @@ module picker_window;
 
 import imgui : Editor, ImGui, LineLayout, MouseInfo, Sizes, TextAlign, TextSpan;
 import imgui.api : addGlobalAlpha;
-import imgui.colorscheme : ColorScheme, defaultColorScheme, RGBA, zenburnColorScheme;
+import imgui.colorscheme : defaultColorScheme, RGBA;
 import picker;
+import settings : colorSchemes, saveColorScheme;
 import imgui.renderer.opengl33 : Opengl33;
 import bindbc.glfw;
 import bindbc.opengl;
-import std.algorithm : max, min;
+import std.algorithm : max, min, sort;
 import std.conv : to;
 import std.exception : enforce;
 import std.file : exists, isFile, thisExePath;
 import std.path : buildPath, dirName, expandTilde;
-import std.string : fromStringz;
+import std.string : fromStringz, splitLines;
 import std.uni : byCodePoint, byGrapheme;
 import std.utf : codeLength;
 
@@ -20,17 +21,6 @@ private RGBA matchColor()
 {
     return defaultColorScheme.item.textMatch;
 }
-
-private struct NamedColorScheme
-{
-    string name;
-    ColorScheme colors;
-}
-
-private immutable colorSchemes = [
-    NamedColorScheme("default", ColorScheme.init),
-    NamedColorScheme("zenburn", zenburnColorScheme)
-];
 
 private TextSpan[] highlightedText(string text, const(ulong)[] matchedPositions)
 {
@@ -86,11 +76,14 @@ final class PickerWindow
     private bool initialized;
     private bool replaceQuery;
     private bool choosingColorScheme;
+    private string[] errorLines;
+    private size_t errorScroll;
     private double scrollRemainder = 0;
     private LineLayout layout;
     private int width, height;
     private enum headerHeight = Sizes.LINE_HEIGHT + Sizes.DEFAULT_SPACING * 2;
     private enum rowHeight = Sizes.LINE_HEIGHT + Sizes.DEFAULT_SPACING;
+    private enum initialWidth = 1024, initialHeight = 800;
 
     this(Picker picker)
     {
@@ -108,7 +101,7 @@ final class PickerWindow
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        handle = glfwCreateWindow(640, 420, "fuzzed", null, null);
+        handle = glfwCreateWindow(initialWidth, initialHeight, "fuzzed", null, null);
         enforce(handle !is null, "Could not create the dimgui OpenGL window");
         glfwSetWindowAttrib(handle, GLFW_RESIZABLE, GLFW_TRUE);
         glfwSetWindowSizeLimits(handle, 240, 140, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -128,8 +121,8 @@ final class PickerWindow
             auto mode = glfwGetVideoMode(monitor);
             if (mode !is null)
             {
-                glfwSetWindowPos(handle, max(0, (mode.width - 640) / 2), max(0,
-                        (mode.height - 420) / 2));
+                glfwSetWindowPos(handle, max(0, (mode.width - initialWidth) / 2),
+                        max(0, (mode.height - initialHeight) / 2));
             }
         }
     }
@@ -155,6 +148,15 @@ final class PickerWindow
         }
     }
 
+    /// Shows `failure` with its backtrace in place of the results until Escape.
+    void showError(string title, Throwable failure)
+    {
+        errorLines = [
+            title, "Escape closes this message, the mouse wheel scrolls it.", ""
+        ] ~ failure.toString.splitLines;
+        errorScroll = 0;
+    }
+
     void run()
     {
         glfwShowWindow(handle);
@@ -162,7 +164,11 @@ final class PickerWindow
         {
             render();
             glfwWaitEventsTimeout(0.05);
-            checkCallbacks();
+            if (callbackFailure !is null)
+            {
+                showError("An input handler failed", callbackFailure);
+                callbackFailure = null;
+            }
         }
         checkCallbacks();
     }
@@ -231,19 +237,33 @@ final class PickerWindow
             {
                 gui.popLayout();
             }
+            if (errorLines.length != 0)
+            {
+                drawError();
+                return;
+            }
             if (choosingColorScheme)
             {
-                foreach (scheme; colorSchemes)
+                // Sorted, because associative array order is unspecified.
+                foreach (name; colorSchemes.keys.sort)
                 {
-                    if (scheme.colors == defaultColorScheme)
+                    if (colorSchemes[name] == defaultColorScheme)
                     {
                         gui.drawRect(gui.state.widgetX, gui.state.widgetY - Sizes.LINE_HEIGHT,
                             gui.state.widgetW, Sizes.LINE_HEIGHT, defaultColorScheme.generic.rect);
                     }
-                    if (gui.item(scheme.name))
+                    if (gui.item(name))
                     {
-                        defaultColorScheme = scheme.colors;
+                        defaultColorScheme = colorSchemes[name];
                         choosingColorScheme = false;
+                        try
+                        {
+                            saveColorScheme(name);
+                        }
+                        catch (Exception failure)
+                        {
+                            showError("Could not save the color scheme", failure);
+                        }
                     }
                 }
                 return;
@@ -274,6 +294,49 @@ final class PickerWindow
         gui.render();
         enforce(glGetError() == GL_NO_ERROR, "OpenGL failed to draw the dimgui picker");
         glfwSwapBuffers(handle);
+    }
+
+    // A read-only multiline text field below the search input.
+    private void drawError()
+    {
+        const top = gui.state.widgetY;
+        gui.drawRoundedRect(gui.state.widgetX, Sizes.DEFAULT_SPACING, gui.state.widgetW,
+                top - Sizes.DEFAULT_SPACING, 10, defaultColorScheme.textInput.back);
+        const textX = gui.state.widgetX + Sizes.LINE_HEIGHT / 2;
+        string[] lines;
+        foreach (line; errorLines)
+        {
+            lines ~= wrap(line, gui.state.widgetW - Sizes.LINE_HEIGHT);
+        }
+        errorScroll = min(errorScroll, lines.length - 1);
+        auto y = top - Sizes.TEXT_HEIGHT;
+        foreach (line; lines[errorScroll .. $])
+        {
+            if (y < Sizes.DEFAULT_SPACING)
+            {
+                break;
+            }
+            gui.drawText(textX, y, TextAlign.left, line, defaultColorScheme.textInput.text);
+            y -= Sizes.TEXT_HEIGHT;
+        }
+    }
+
+    // Splits `line` into pieces at most `width` pixels wide, breaking between code points.
+    private string[] wrap(string line, float width)
+    {
+        string[] pieces;
+        size_t start;
+        foreach (index, dchar character; line)
+        {
+            if (index > start
+                    && gui.state.getTextLength(
+                        line[start .. index + codeLength!char(character)]) > width)
+            {
+                pieces ~= line[start .. index];
+                start = index;
+            }
+        }
+        return pieces ~ line[start .. $];
     }
 
     private bool gearButton(int x, int y)
@@ -380,6 +443,11 @@ final class PickerWindow
             picker.accept();
             break;
         case GLFW_KEY_ESCAPE:
+            if (errorLines.length != 0)
+            {
+                errorLines = null;
+                break;
+            }
             if (choosingColorScheme)
             {
                 choosingColorScheme = false;
@@ -476,7 +544,15 @@ final class PickerWindow
             instance.scrollRemainder -= vertical * 3;
             auto rows = cast(int) instance.scrollRemainder;
             instance.scrollRemainder -= rows;
-            instance.picker.scroll(rows);
+            if (instance.errorLines.length != 0)
+            {
+                // drawError limits it to the wrapped line count.
+                instance.errorScroll = max(0, cast(long) instance.errorScroll + rows);
+            }
+            else
+            {
+                instance.picker.scroll(rows);
+            }
         }
         catch (Exception failure)
         {

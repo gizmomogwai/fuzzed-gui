@@ -1,13 +1,21 @@
-import imgui.colorscheme : defaultColorScheme, zenburnColorScheme;
 import picker;
 import picker_window;
+import settings : loadColorScheme;
 import std.array : array;
 import std.exception : enforce;
-import std.stdio : stderr, stdin, stdout;
+import std.stdio : stdin, stdout, stderr;
 
 int main(string[] arguments)
 {
-    defaultColorScheme = zenburnColorScheme;
+    Exception settingsFailure;
+    try
+    {
+        loadColorScheme();
+    }
+    catch (Exception failure)
+    {
+        settingsFailure = failure;
+    }
     try
     {
         enforce(arguments.length == 1, "Usage: fuzzed-gui");
@@ -18,6 +26,10 @@ int main(string[] arguments)
             scope (exit)
             {
                 window.dispose();
+            }
+            if (settingsFailure !is null)
+            {
+                window.showError("Could not load the settings", settingsFailure);
             }
             window.run();
         }
